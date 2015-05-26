@@ -1,0 +1,29 @@
+{
+  "manifest_version": 2,
+
+  "name": "Hangouts with Tab Key",
+  "description": "This extension lets you tab through Google Hangout windows",
+  "version": "1.0",
+
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [{
+    "matches": [
+      "https://mail.google.com/*", 
+      "https://inbox.google.com/*"
+    ],
+    "js": ["host-site.js"]
+  }, {
+    "matches": [
+      "https://talkgadget.google.com/*"
+    ],
+    "all_frames": true,
+    "js": ["hangout-window.js"],
+    "run_at": "document_end"
+  }]
+}
