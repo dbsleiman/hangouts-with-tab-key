@@ -1,4 +1,4 @@
-console.log('loaded in ' + document.domain)
+//console.log('loaded in ' + document.domain)
 
 var hangoutWindows = [];
 var hangoutWindowTargetIndex = null;
@@ -7,17 +7,16 @@ window.onkeydown = onKeyDownHandler;
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 	if (message.action == 'newWindow') {
-		hangoutWindows.push(message.windowId);
+		addWindowIdToArray(message.windowId);
 	} else if (message.action == "closeWindow") {
 		var indexOfItem = hangoutWindows.indexOf(message.windowId);
 		if (indexOfItem != -1) {
 			hangoutWindows.splice(indexOfItem, 1);
 		}
-	}	
+	}
 });
 
 function onKeyDownHandler(e) {
-	console.log(hangoutWindows);
 	if (hangoutWindows.length == 0)
 		return;
 
@@ -28,7 +27,6 @@ function onKeyDownHandler(e) {
 		}
 		setNextIndex(reverse);
 
-		console.log('current index = ' + hangoutWindowTargetIndex);
 		e.preventDefault();
 		chrome.runtime.sendMessage({
 			action: 'focusWindow',
@@ -58,6 +56,12 @@ function setNextIndex(reverse) {
 }
 
 function hangoutWindowGotFocus(windowId) {
-	console.log('got focus on window with id = ' + windowId);
+	addWindowIdToArray(windowId);
 	hangoutWindowTargetIndex = hangoutWindows.indexOf(windowId);
+}
+
+function addWindowIdToArray(windowId) {
+	if (hangoutWindows.indexOf(windowId) == -1) {
+		hangoutWindows.push(windowId);	
+	};
 }

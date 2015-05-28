@@ -1,60 +1,74 @@
-console.log('loaded in ' + document.domain + ' with url ' + document.URL);
+(function() {
 
 var parentDomain = window.parent.document.domain;
 var inputDiv = null;
 var windowId = null;
 
+if (!isHangoutWindow()) {
+	return;
+}
+
+//console.log('loaded in ' + document.domain + ' with url ' + document.URL);
+
 if (parentDomain == 'mail.google.com') {
 	// observe the body for mutations
-	var observer = new MutationObserver(function(mutations) {
+	var windowIdObserver = new MutationObserver(function(mutations) {
 		mutations.forEach(function(mutation) {
 			if (mutation.type == 'attributes' && mutation.attributeName == 'cid') {
 				windowId = document.body.getAttribute('cid');
-				console.log(windowId);
-				observer.disconnect();
-				init();
+				checkForNecessaryItems();
 			}
 		});
 	});
 
-	var config = { attributes: true };
-	observer.observe(document.body, config);
-
-	// automatically disconnect observer after 15 seconds
-	setTimeout(function() {
-		observer.disconnect();
-	}, 15000);
+	windowIdObserver.observe(document.body, { attributes: true });
 } else {
 	windowId = document.URL;
-	init();
+	checkForNecessaryItems();
+}
+
+var inputDivObserver = new MutationObserver(function(mutations) {
+	mutations.forEach(function(mutation) {
+		if (mutation.type == 'childList' && mutation.addedNodes && mutation.addedNodes.length > 0 && !inputDiv) {
+			inputDiv = mutation.target.querySelector("div.editable");
+			if (inputDiv) {
+				checkForNecessaryItems();
+			}
+		}
+	});
+});
+
+inputDivObserver.observe(document.body, { childList: true });
+
+var hasInitialized = false;
+function checkForNecessaryItems() {
+	if (inputDiv && windowId && !hasInitialized) {
+		hasInitialized = true;
+		init();
+	}
 }
 
 function init() {
-	if (isHangoutWindow() && windowId) {
-		window.onkeydown = window.parent.onKeyDownHandler;
-		window.onunload = onUnload;
+	
+	window.onkeydown = window.parent.onKeyDownHandler;
+	window.onunload = onUnload;
 
-		// since the html is being provided via ajax, we need to tap into the dom manipulation events
-		document.addEventListener("DOMNodeInserted", onDomNodeInserted);	
+	chrome.runtime.sendMessage({
+		action: 'newWindow', 
+		windowId: windowId
+	});
 
-		console.log('about to send message with windowId = ' + windowId);
-		chrome.runtime.sendMessage({
-			action: 'newWindow', 
-			windowId: windowId
-		});
+	chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+		if (message.action == 'focusWindow' && message.windowId == windowId && inputDiv != null) {
+			inputDiv.focus();
+		}
+	});
 
-		chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-			if (message.action == 'focusWindow' && message.windowId == windowId && inputDiv != null) {
-				console.log('about to focus on window');
-				inputDiv.focus();
-			}
-		});
-	}	
+	inputDiv.addEventListener("focus", function() { window.parent.hangoutWindowGotFocus(windowId); });
 }
 
 
 function onUnload() {
-	console.log('closing hangout window');
 	chrome.runtime.sendMessage({
 		action: 'closeWindow', 
 		windowId: windowId
@@ -68,15 +82,5 @@ function isHangoutWindow() {
 		return document.URL.indexOf('#epreld') > -1;
 }
 
-function onDomNodeInserted(e) {
-	if (!e.target)
-		return;
 
-	// find the div with the "dQ" class
-	var elements = document.querySelectorAll('.dQ')
-	if (elements.length > 0) {
-		inputDiv = elements[0];
-		inputDiv.addEventListener("focus", function() { window.parent.hangoutWindowGotFocus(windowId); });
-		document.removeEventListener("DOMNodeInserted", onDomNodeInserted);
-	}
-}
+})();
