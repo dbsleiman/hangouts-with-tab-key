@@ -1,5 +1,7 @@
 //console.log('loaded in ' + document.domain)
 
+var hostDomains = ["mail.google.com", "inbox.google.com"];
+
 var hangoutWindows = [];
 var hangoutWindowTargetIndex = null;
 
@@ -25,7 +27,13 @@ function onKeyDownHandler(e) {
 		if (e.shiftKey) {
 			reverse = true;
 		}
-		setNextIndex(reverse);
+
+		var setToStartIndex = false;
+		if (hostDomains.indexOf(e.view.document.domain) != -1) {
+			setToStartIndex = true;
+		}
+
+		setNextIndex(reverse, setToStartIndex);
 
 		e.preventDefault();
 		chrome.runtime.sendMessage({
@@ -35,10 +43,7 @@ function onKeyDownHandler(e) {
 	}	
 }
 
-function setNextIndex(reverse) {
-	if (hangoutWindows.length == 0)
-		return;
-
+function setNextIndex(reverse, setToStartIndex) {
 	var startIndex;
 	if (reverse) {
 		hangoutWindowTargetIndex++;
@@ -49,8 +54,10 @@ function setNextIndex(reverse) {
 		startIndex = hangoutWindows.length - 1
 	}
 
-	// check to see if next index is out of range
-	if (hangoutWindowTargetIndex < 0 || hangoutWindowTargetIndex >= hangoutWindows.length) {
+	if (setToStartIndex) {
+		hangoutWindowTargetIndex = startIndex;
+	} else if (hangoutWindowTargetIndex < 0 || hangoutWindowTargetIndex >= hangoutWindows.length) {
+		// check to see if next index is out of range
 		hangoutWindowTargetIndex = startIndex;  // index out of range, set back to start
 	}
 }
@@ -65,3 +72,4 @@ function addWindowIdToArray(windowId) {
 		hangoutWindows.push(windowId);	
 	};
 }
+
