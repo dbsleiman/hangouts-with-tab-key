@@ -3,10 +3,14 @@ A chrome extension that allows you to use the tab key to cycle through hangout w
 
 Currently works in gmail and inbox
 
-# how to install
+# installation
 
-1.  clone repo
-2.  open up a new tab and go to `chrome://extensions/`
-3.  click on `Load unpacked extension...`
-4.  select the folder in which you cloned this repo into
-5.  enjoy!
+download from the chrome web store
+
+https://chrome.google.com/webstore/detail/hangouts-with-tab-key/hmheoijjmglfngclealeoibpgfeildjl
+
+# how to use
+
+open up gmail or inbox and start using hangouts
+
+use `tab` and `shift + tab` to navigate the windows
